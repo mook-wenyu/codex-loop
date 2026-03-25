@@ -1,0 +1,19 @@
+# 依赖与构建产物
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# 运行日志
+*.log
+
+# Codex-loop 本地运行状态与人工验证产物
+.codex-loop-runs/
+real-codex-*-output*/
+real-codex-*-prompt.md
+
+# 操作系统与编辑器噪音
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
