@@ -4,9 +4,11 @@ import { Writable } from 'node:stream';
 import { runSupervisor } from './application/supervisor.js';
 import { resolvePromptText } from './application/read-prompt.js';
 import {
+  isAiHelpRequest,
   isHelpRequest,
   isVersionRequest,
   readPackageVersion,
+  renderAiHelpText,
   renderHelpText
 } from './config/cli-meta.js';
 import { parseCliOptions } from './config/options.js';
@@ -35,6 +37,11 @@ export async function runCli(
     stderr: process.stderr
   }
 ): Promise<number> {
+  if (isAiHelpRequest(argv)) {
+    runtime.stdout.write(`${renderAiHelpText()}\n`);
+    return 0;
+  }
+
   if (isHelpRequest(argv)) {
     runtime.stdout.write(`${renderHelpText()}\n`);
     return 0;

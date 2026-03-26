@@ -166,6 +166,13 @@ codex-loop --help
 node dist/cli.js --help
 ```
 
+如果希望查看给上游智能体使用的协议：
+
+```bash
+codex-loop -ai
+node dist/cli.js -ai
+```
+
 ## 快速开始
 
 ### 1. 写最终目标，不要只写阶段目标
@@ -221,6 +228,47 @@ Get-Content ./prompt.md | node dist/cli.js - `
   --state-dir .codex-loop-runs\stdin-task
 ```
 
+## 给智能体使用
+
+`codex-loop` 的输入本质上只有一件事：**最终目标 prompt**。  
+`-ai` / `--ai-help` 会输出一份给上游智能体看的“可执行提示生成协议”，告诉它如何：
+
+1. 先检索仓库上下文，而不是盲写 prompt
+2. 把用户需求改写成最终状态契约
+3. 写清范围、约束、验收标准和交付要求
+4. 避免把 `resume`、完成审查、状态目录等 loop 机制重复塞进 prompt
+5. 优先直接通过 `--prompt-text` 把生成结果交给 `codex-loop`
+
+推荐工作流：
+
+```bash
+codex-loop -ai
+```
+
+让上游智能体读取协议后，直接产出 prompt 正文，再执行：
+
+```bash
+codex-loop --prompt-text "<AI 生成的最终目标 prompt>" \
+  --workdir /path/to/repo \
+  --state-dir .codex-loop-runs/my-task
+```
+
+如果上游系统需要保留实时进度，请**不要吞掉 `stderr`**。  
+当前实现约定是：
+
+- `stderr`：实时阶段进度与续跑日志
+- `stdout`：最终 assistant 消息
+
+也就是说，如果一个智能体包装层只读取 `stdout`，它仍然能拿到最终结果，但中途进度会变得不可视。  
+更合理的接法是：实时转发 `stderr`，单独捕获 `stdout` 作为最终结果。
+
+这个设计刻意不把“自动生成 prompt”的策略硬编码进 `codex-loop` 运行时。  
+原因很直接：
+
+- prompt 质量依赖当前仓库上下文、用户约束和最新资料
+- 上游智能体应先检索再生成，而不是使用固定模板盲填
+- `codex-loop` 应保持为稳定的长循环执行内核，而不是继续膨胀成提示工程框架
+
 ## 常用选项
 
 | 选项 | 默认值 | 说明 |
@@ -238,6 +286,7 @@ Get-Content ./prompt.md | node dist/cli.js - `
 | `--full-auto` | 关闭 | 透传给 Codex 的 `--full-auto` |
 | `--dangerously-bypass` | 开启 | 透传危险绕过模式 |
 | `--skip-git-repo-check` | 开启 | 允许在非 Git 目录运行 |
+| `-ai` / `--ai-help` | 无 | 输出给上游智能体看的使用协议与可执行提示生成协议 |
 
 ## 环境变量
 
@@ -338,9 +387,14 @@ npm run build
 ## 参考资料
 
 - [OpenAI Codex CLI 命令参考](https://developers.openai.com/codex/cli/reference)
+- [OpenAI Prompt engineering 指南](https://platform.openai.com/docs/guides/prompt-engineering/)
 - [OpenAI：Unrolling the Codex agent loop](https://openai.com/index/unrolling-the-codex-agent-loop/)
 - [OpenAI Evaluation Best Practices](https://platform.openai.com/docs/guides/evaluation-best-practices)
+- [Anthropic Prompting best practices](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/claude-prompting-best-practices)
+- [Anthropic: Effective context engineering for AI agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
 - [leo-lilinxiao/codex-autoresearch](https://github.com/leo-lilinxiao/codex-autoresearch)
+- [AutoPDL: Automatic Prompt Optimization for LLM Agents](https://arxiv.org/abs/2504.04365)
+- [A Survey of Automatic Prompt Engineering: An Optimization Perspective](https://arxiv.org/abs/2502.11560)
 - [Agentic Rubrics as Contextual Verifiers for SWE Agents](https://arxiv.org/abs/2601.04171)
 - [ReVeal: Self-Evolving Code Agents via Iterative Generation-Verification](https://arxiv.org/abs/2506.11442)
 
