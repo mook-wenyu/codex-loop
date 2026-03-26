@@ -166,6 +166,13 @@ codex-loop --help
 node dist/cli.js --help
 ```
 
+如果需要查看给上游智能体使用的提示词生成协议：
+
+```bash
+codex-loop -ai
+node dist/cli.js -ai
+```
+
 ## 快速开始
 
 ### 1. 写最终目标，不要只写阶段目标
@@ -221,6 +228,45 @@ Get-Content ./prompt.md | node dist/cli.js - `
   --state-dir .codex-loop-runs\stdin-task
 ```
 
+## 给智能体使用
+
+如果你的工作流是“智能体负责生成 prompt，人类手动执行 CLI”，请使用：
+
+```bash
+codex-loop -ai
+```
+
+这会输出一份给智能体看的提示词生成协议。协议的目标不是让智能体代替人执行 `codex-loop`，而是让它：
+
+1. 先检索仓库上下文
+2. 生成一份面向最终结果的 prompt 正文
+3. 明确范围、约束、验收标准和交付要求
+4. 把 prompt 交给人类，由人类手动执行 CLI
+
+推荐的人类执行方式有两种：
+
+直接粘贴：
+
+```bash
+codex-loop --prompt-text "<智能体生成的 prompt 正文>" \
+  --workdir /path/to/repo \
+  --state-dir .codex-loop-runs/my-task
+```
+
+先落文件再执行：
+
+```bash
+codex-loop ./prompt.md \
+  --workdir /path/to/repo \
+  --state-dir .codex-loop-runs/my-task
+```
+
+这样做的原因很直接：
+
+- `codex-loop` 负责长循环执行与收口稳定性
+- 上游智能体负责检索上下文并生成高质量 prompt
+- 人类保留最终执行权，避免把执行策略、进度呈现和终端控制耦进上游智能体
+
 ## 常用选项
 
 | 选项 | 默认值 | 说明 |
@@ -238,6 +284,7 @@ Get-Content ./prompt.md | node dist/cli.js - `
 | `--full-auto` | 关闭 | 透传给 Codex 的 `--full-auto` |
 | `--dangerously-bypass` | 开启 | 透传危险绕过模式 |
 | `--skip-git-repo-check` | 开启 | 允许在非 Git 目录运行 |
+| `-ai` / `--ai-help` | 无 | 输出给智能体看的提示词生成协议 |
 
 ## 环境变量
 
@@ -338,9 +385,14 @@ npm run build
 ## 参考资料
 
 - [OpenAI Codex CLI 命令参考](https://developers.openai.com/codex/cli/reference)
+- [OpenAI Prompt engineering 指南](https://platform.openai.com/docs/guides/prompt-engineering)
+- [Anthropic Prompting best practices](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/claude-prompting-best-practices)
+- [Anthropic: Effective context engineering for AI agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
 - [OpenAI：Unrolling the Codex agent loop](https://openai.com/index/unrolling-the-codex-agent-loop/)
 - [OpenAI Evaluation Best Practices](https://platform.openai.com/docs/guides/evaluation-best-practices)
 - [leo-lilinxiao/codex-autoresearch](https://github.com/leo-lilinxiao/codex-autoresearch)
+- [AutoPDL: Automatic Prompt Optimization for LLM Agents](https://arxiv.org/abs/2504.04365)
+- [A Survey of Automatic Prompt Engineering: An Optimization Perspective](https://arxiv.org/abs/2502.11560)
 - [Agentic Rubrics as Contextual Verifiers for SWE Agents](https://arxiv.org/abs/2601.04171)
 - [ReVeal: Self-Evolving Code Agents via Iterative Generation-Verification](https://arxiv.org/abs/2506.11442)
 
