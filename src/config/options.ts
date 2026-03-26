@@ -20,6 +20,7 @@ export interface CliOptions {
   readonly workdir: string;
   readonly stateDir?: string;
   readonly intervalSeconds: number;
+  readonly progressFormat: 'text' | 'json';
   readonly maxAttempts?: number;
   readonly codexBin: string;
   readonly model?: string;
@@ -42,6 +43,7 @@ export function parseCliOptions(input: ParseCliOptionsInput): CliOptions {
       'state-dir': { type: 'string' },
       'prompt-text': { type: 'string' },
       'interval-seconds': { type: 'string' },
+      'progress-format': { type: 'string' },
       'max-attempts': { type: 'string' },
       'codex-bin': { type: 'string' },
       model: { type: 'string' },
@@ -73,6 +75,9 @@ export function parseCliOptions(input: ParseCliOptionsInput): CliOptions {
   const intervalSeconds = parsePositiveInteger(
     parsed.values['interval-seconds'] ?? readEnv('INTERVAL_SECONDS') ?? '3',
     'interval-seconds'
+  );
+  const progressFormat = parseProgressFormat(
+    parsed.values['progress-format'] ?? readEnv('PROGRESS_FORMAT') ?? 'text'
   );
 
   const maxAttemptsValue = parsed.values['max-attempts'] ?? readEnv('MAX_ATTEMPTS');
@@ -108,6 +113,7 @@ export function parseCliOptions(input: ParseCliOptionsInput): CliOptions {
     workdir,
     ...(stateDir === undefined ? {} : { stateDir }),
     intervalSeconds,
+    progressFormat,
     ...(maxAttempts === undefined ? {} : { maxAttempts }),
     codexBin:
       parsed.values['codex-bin'] ??
@@ -136,4 +142,14 @@ function parsePositiveInteger(value: string, optionName: string): number {
   }
 
   return numeric;
+}
+
+function parseProgressFormat(value: string): 'text' | 'json' {
+  if (value === 'text' || value === 'json') {
+    return value;
+  }
+
+  throw new Error(
+    `progress-format 只支持 text 或 json，收到：${value}`
+  );
 }

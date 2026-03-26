@@ -301,6 +301,75 @@ describe('createCliProgressReporter', () => {
 
     expect(stream.text()).toContain('[x] 达到最大尝试次数 5');
   });
+
+  it('在 json 模式下会输出机器可读的 JSONL 进度事件', () => {
+    const stream = new MemoryProgressStream({ isTTY: false });
+    const reporter = createCliProgressReporter({
+      stream,
+      now: constantClock('2026-03-25T12:00:00.000Z'),
+      format: 'json'
+    });
+
+    emit(reporter, [
+      {
+        type: 'run-started',
+        initialMode: 'initial',
+        stateDir: '/state',
+        workdir: '/repo'
+      },
+      {
+        type: 'attempt-started',
+        attempt: 1,
+        mode: 'initial'
+      },
+      {
+        type: 'attempt-finished',
+        attempt: 1,
+        mode: 'initial',
+        exitCode: 0,
+        completionRequested: false,
+        completed: false,
+        failureKind: 'completion-missing'
+      }
+    ]);
+
+    reporter.close();
+
+    const lines = stream
+      .text()
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
+
+    expect(lines).toHaveLength(3);
+    expect(lines[0]).toEqual(
+      expect.objectContaining({
+        type: 'run-started',
+        initialMode: 'initial',
+        stateDir: '/state',
+        workdir: '/repo',
+        message: '状态目录：/state'
+      })
+    );
+    expect(lines[1]).toEqual(
+      expect.objectContaining({
+        type: 'attempt-started',
+        attempt: 1,
+        mode: 'initial',
+        message: '第 1 轮开始（initial）'
+      })
+    );
+    expect(lines[2]).toEqual(
+      expect.objectContaining({
+        type: 'attempt-finished',
+        attempt: 1,
+        mode: 'initial',
+        exitCode: 0,
+        failureKind: 'completion-missing',
+        message: '第 1 轮结束：exitCode=0，未触发完成协议'
+      })
+    );
+  });
 });
 
 function constantClock(isoText: string): () => Date {

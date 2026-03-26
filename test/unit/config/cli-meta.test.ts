@@ -34,6 +34,7 @@ describe('cli-meta', () => {
     expect(text).toContain('codex-loop');
     expect(text).toContain('--state-dir');
     expect(text).toContain('--max-attempts');
+    expect(text).toContain('--progress-format');
     expect(text).toContain('--no-full-auto');
     expect(text).toContain('--ai-help');
     expect(text).not.toContain('--verify-cmd');
@@ -47,6 +48,7 @@ describe('cli-meta', () => {
     expect(text).toContain('面向智能体的使用协议');
     expect(text).toContain('先检索仓库上下文');
     expect(text).toContain('--prompt-text');
+    expect(text).toContain('--progress-format json');
     expect(text).toContain('验收标准');
     expect(text).toContain('不要把续跑机制写进 prompt');
     expect(text).toContain('stderr');

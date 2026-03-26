@@ -262,6 +262,23 @@ codex-loop --prompt-text "<AI 生成的最终目标 prompt>" \
 也就是说，如果一个智能体包装层只读取 `stdout`，它仍然能拿到最终结果，但中途进度会变得不可视。  
 更合理的接法是：实时转发 `stderr`，单独捕获 `stdout` 作为最终结果。
 
+如果上游是后台智能体、队列 Worker、CI Runner 或任意非交互编排层，推荐直接切到机器可读进度：
+
+```bash
+codex-loop \
+  --progress-format json \
+  --prompt-text "<AI 生成的最终目标 prompt>" \
+  --workdir /path/to/repo \
+  --state-dir .codex-loop-runs/my-task
+```
+
+此时：
+
+- `stderr`：JSONL 进度事件，适合编排器实时解析
+- `stdout`：最终 assistant 消息，保持原有语义不变
+
+也就是说，后台系统不需要再解析“第 2 轮开始”这类自然语言文本，而是可以直接消费结构化事件。
+
 这个设计刻意不把“自动生成 prompt”的策略硬编码进 `codex-loop` 运行时。  
 原因很直接：
 
@@ -278,6 +295,7 @@ codex-loop --prompt-text "<AI 生成的最终目标 prompt>" \
 | `--workdir <path>` | 当前目录 | Codex 实际工作的仓库目录 |
 | `--state-dir <path>` | 自动创建临时目录 | 状态目录；想要可靠恢复时建议显式指定 |
 | `--interval-seconds <number>` | `3` | 未完成时下一轮恢复前的等待秒数 |
+| `--progress-format <mode>` | `text` | 进度输出格式：`text` 或 `json`；后台编排建议用 `json` |
 | `--max-attempts <number>` | 无 | 限制最大尝试次数，适合 CI 或调试 |
 | `--codex-bin <name>` | `codex` | Codex 可执行文件名 |
 | `--model <name>` | 无 | 透传给 Codex 的模型参数 |
@@ -296,6 +314,7 @@ codex-loop --prompt-text "<AI 生成的最终目标 prompt>" \
 - `CODEX_LOOP_WORKDIR`
 - `CODEX_LOOP_STATE_DIR`
 - `CODEX_LOOP_INTERVAL_SECONDS`
+- `CODEX_LOOP_PROGRESS_FORMAT`
 - `CODEX_LOOP_MAX_ATTEMPTS`
 - `CODEX_LOOP_CODEX_BIN`
 - `CODEX_LOOP_MODEL`

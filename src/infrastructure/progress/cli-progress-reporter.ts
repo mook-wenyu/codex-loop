@@ -44,6 +44,7 @@ export interface CreateCliProgressReporterOptions {
   readonly stream?: ProgressStream;
   readonly now?: () => Date;
   readonly tickMs?: number;
+  readonly format?: 'text' | 'json';
 }
 
 export function createCliProgressReporter(
@@ -51,6 +52,11 @@ export function createCliProgressReporter(
 ): ProgressReporter {
   const stream = options.stream ?? (process.stderr as ProgressStream);
   const now = options.now ?? (() => new Date());
+  const format = options.format ?? 'text';
+
+  if (format === 'json') {
+    return new JsonLineProgressReporter(stream, now);
+  }
 
   if (stream.isTTY) {
     return new TtyProgressReporter(
@@ -106,6 +112,30 @@ class LineProgressReporter implements ProgressReporter {
 
   private writeLine(line: string): void {
     this.stream.write(`${line}\n`);
+  }
+}
+
+class JsonLineProgressReporter implements ProgressReporter {
+  private readonly stream: ProgressStream;
+  private readonly now: () => Date;
+
+  constructor(stream: ProgressStream, now: () => Date) {
+    this.stream = stream;
+    this.now = now;
+  }
+
+  report(event: ProgressEvent): void {
+    const payload = {
+      timestamp: this.now().toISOString(),
+      ...event,
+      message: formatProgressEventMessage(event)
+    };
+
+    this.stream.write(`${JSON.stringify(payload)}\n`);
+  }
+
+  close(): void {
+    this.now();
   }
 }
 
@@ -320,6 +350,27 @@ function formatAttemptFinishedLine(
           : '未触发完成协议';
 
   return `第 ${event.attempt} 轮结束：exitCode=${event.exitCode}，${reason}`;
+}
+
+function formatProgressEventMessage(event: ProgressEvent): string {
+  switch (event.type) {
+    case 'run-started':
+      return `状态目录：${event.stateDir}`;
+    case 'attempt-started':
+      return `第 ${event.attempt} 轮开始（${event.mode}）`;
+    case 'attempt-finished':
+      return formatAttemptFinishedLine(event);
+    case 'sleep-started':
+      return `等待 ${event.seconds} 秒后继续续跑`;
+    case 'run-completed':
+      return `任务完成：共执行 ${event.attempt} 轮`;
+    case 'max-attempts-exceeded':
+      return `达到最大尝试次数：${event.maxAttempts}（已执行 ${event.attempt} 轮）`;
+    case 'codex-event':
+      return event.eventType === undefined
+        ? `第 ${event.attempt} 轮收到 Codex 事件`
+        : `第 ${event.attempt} 轮收到 Codex 事件：${event.eventType}`;
+  }
 }
 
 function formatLastAttemptSuffix(snapshot: ProgressSnapshot): string {

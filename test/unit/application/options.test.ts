@@ -15,6 +15,7 @@ describe('parseCliOptions', () => {
     expect(result.promptSource).toBe('prompt.md');
     expect(result.workdir).toBe(cwd);
     expect(result.intervalSeconds).toBe(3);
+    expect(result.progressFormat).toBe('text');
     expect(
       'verificationPolicy' in (result as unknown as Record<string, unknown>)
     ).toBe(false);
@@ -34,6 +35,8 @@ describe('parseCliOptions', () => {
         './state',
         '--interval-seconds',
         '9',
+        '--progress-format',
+        'json',
         '--no-full-auto',
         '--no-dangerously-bypass',
         '--no-skip-git-repo-check',
@@ -52,6 +55,7 @@ describe('parseCliOptions', () => {
     expect(result.workdir).toBe(resolve(cwd, 'repo'));
     expect(result.stateDir).toBe(resolve(cwd, 'state'));
     expect(result.intervalSeconds).toBe(9);
+    expect(result.progressFormat).toBe('json');
     expect(result.fullAuto).toBe(false);
     expect(result.dangerouslyBypass).toBe(true);
     expect(result.skipGitRepoCheck).toBe(false);
@@ -78,6 +82,29 @@ describe('parseCliOptions', () => {
 
     expect(result.promptText).toBe('直接执行这段任务文本');
     expect(result.promptSource).toBeUndefined();
+  });
+
+  it('支持通过环境变量配置 progress format', () => {
+    const cwd = resolve('workspace', 'app');
+    const result = parseCliOptions({
+      argv: ['prompt.md'],
+      cwd,
+      env: {
+        CODEX_LOOP_PROGRESS_FORMAT: 'json'
+      }
+    });
+
+    expect(result.progressFormat).toBe('json');
+  });
+
+  it('会拒绝非法的 progress format', () => {
+    expect(() =>
+      parseCliOptions({
+        argv: ['prompt.md', '--progress-format', 'yaml'],
+        cwd: resolve('workspace', 'app'),
+        env: {}
+      })
+    ).toThrow(/progress-format/i);
   });
 
   it('会拒绝已删除的外置验证选项', () => {
