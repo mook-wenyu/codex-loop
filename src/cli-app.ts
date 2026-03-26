@@ -103,7 +103,6 @@ export async function runCli(
   });
   const progressReporter = createCliProgressReporter({
     stream: runtime.stderr,
-    format: options.progressFormat,
     ...(runtime.now === undefined ? {} : { now: runtime.now })
   });
   const executor = new ExecaCodexExecutor({

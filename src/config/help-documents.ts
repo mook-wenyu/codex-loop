@@ -10,7 +10,6 @@ const HUMAN_OPTION_LINES = [
   '  --workdir <path>              指定 Codex 实际工作的仓库目录',
   '  --state-dir <path>            指定状态目录；未提供时自动创建临时目录',
   '  --interval-seconds <number>   指定续跑间隔秒数，默认 3',
-  '  --progress-format <mode>      进度输出格式：text（默认）或 json',
   '  --max-attempts <number>       限制最大尝试次数，适合 CI/测试场景',
   '  --codex-bin <name>            指定 Codex 可执行文件名，默认 codex',
   '  --model <name>                透传给 Codex 的模型参数',
@@ -44,8 +43,7 @@ const AI_PROTOCOL_SECTIONS: readonly HelpSection[] = [
       '2. 从用户原始诉求提炼“最终状态契约”：写清最终结果、变更范围、硬性约束、验收标准、交付物。',
       '3. 只保留必要上下文：补充与任务强相关的模块、命令、架构约束，不要塞入无关文件摘要。',
       '4. 生成 prompt 本体：默认输出一段可直接传给 --prompt-text 的纯文本，不要附加解释、寒暄、Markdown 包装或多余前后缀。',
-      '5. 如果上游系统在后台执行 codex-loop，优先同时指定 --progress-format json，让编排层稳定消费 JSONL 进度事件。',
-      '6. 需要复用或审计时，再把同一份 prompt 落到文件；否则优先直接走 --prompt-text。'
+      '5. 需要复用或审计时，再把同一份 prompt 落到文件；否则优先直接走 --prompt-text。'
     ]
   },
   {
@@ -107,7 +105,6 @@ const AI_PROTOCOL_SECTIONS: readonly HelpSection[] = [
       '',
       '保留进度可视性：实时阶段进度默认输出到 stderr，最终 assistant 消息输出到 stdout。上游调用方不要吞掉 stderr。',
       '如果需要同时保留机器可消费结果和人类可见进度，应实时转发 stderr，并单独捕获 stdout 最终结果。',
-      `如果上游是后台智能体或编排器，优先使用：${CLI_NAME} --progress-format json --prompt-text "<AI 生成的 prompt>" --workdir <repo> --state-dir .codex-loop-runs/<task-name>`,
       '',
       '如果需要落文件：',
       `${CLI_NAME} ./prompt.md --workdir <repo> --state-dir .codex-loop-runs/<task-name>`
@@ -120,7 +117,6 @@ const AI_PROTOCOL_SECTIONS: readonly HelpSection[] = [
       '- prompt 必须写清验收标准，避免只描述过程不描述完成状态。',
       '- prompt 应面向最终结果，而不是要求模型重复解释自己的计划。',
       '- 如果需要观察实时进度，上游系统必须保留 stderr；只读取 stdout 只会看到最终消息。',
-      '- 后台执行时，优先使用 --progress-format json，而不是依赖解析自然语言进度文本。',
       '- 如果用户要求联网检索、对齐最新资料或引用权威来源，prompt 中必须明确保留该要求。'
     ]
   }
